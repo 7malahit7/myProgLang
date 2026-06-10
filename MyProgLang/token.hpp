@@ -8,6 +8,7 @@ namespace mpl
 	{
 		Error,
 		Eof,
+		Semicolon,
 
 		Plus,
 		Minus,
@@ -15,8 +16,12 @@ namespace mpl
 		Slash,
 		ParenOpen,
 		ParenClose,
+		EqSign,
 
-		Number
+		Idetifier,
+		Number,
+
+		KwVar
 	};
 
 	class Token final

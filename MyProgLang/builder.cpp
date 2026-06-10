@@ -1,5 +1,6 @@
 #include "builder.hpp"
 
+
 namespace mpl::ast
 {
 	template <ast_node T, typename ...Args>
@@ -34,6 +35,11 @@ namespace mpl::ast
 		make<lit_expr>(value);
 	}
 
+	void Builder::make_id(decl& d)
+	{
+		make<id_expr>(d);
+	}
+
 	void Builder::make_unary(operation op)
 	{
 		if (auto operand = extract())
@@ -52,6 +58,40 @@ namespace mpl::ast
 		}
 	}
 
+	decl* Builder::make_var(const Token& name)
+	{
+		auto init = extract();
+		if (init)
+		{
+			make<var_decl>(name, *init);
+		}
+		else
+		{
+			return {};
+		}
+		return static_cast<decl*>(m_root);
+	}
+
+	void Builder::make_list(list::size_type count)
+	{
+		const auto availableSz = static_cast<list::size_type>(m_state.size());
+		if (availableSz < count)
+		{
+			//error
+			return;
+		}
+		const auto startPos = availableSz - count;
+		auto beg = std::next(m_state.begin(), startPos);
+		list::data_type items;
+		items.reserve(count);
+		for (auto it = beg; it != m_state.end(); ++it)
+		{
+			items.push_back(*it);
+		}
+		m_state.erase(beg, m_state.end());
+		make<list>(std::move(items));
+	}
+		
 	Node* Builder::extract()
 	{
 		if (m_state.empty())

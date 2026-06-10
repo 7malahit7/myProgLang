@@ -2,6 +2,7 @@
 #include "visitor.hpp"
 
 #include <iostream>
+#include <print>
 
 class AstPrinter
 	: public mpl::ast::Visitor<AstPrinter>	
@@ -69,6 +70,32 @@ public:
 
 		std::cout << "'\n";
 		m_indetations.push_back(2u);
+		return true;
+	}
+	bool preview(const mpl::ast::list& list)
+	{
+		indent();
+		std::cout << "list\n";
+		m_indetations.push_back(list.children().size());
+		return true;
+	}
+	bool preview(const mpl::ast::id_expr& expr)
+	{
+		using namespace std::literals;
+		indent();
+		std::cout << "variable ref '" << expr.name().value() << "' [";
+		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&expr.declaration()));
+		std::cout << "]\n";
+		return true;
+	}
+	bool preview(const mpl::ast::var_decl& decl)
+	{
+		using namespace std::literals;
+		indent();
+		std::cout << "variable '" << decl.name().value() << "' [";
+		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
+		std::cout << "]\n";
+		m_indetations.push_back(1u);
 		return true;
 	}
 private:
@@ -168,6 +195,6 @@ void test_parser(std::string_view input)
 
 int main()
 {
-	test_parser("42 * ( 2 + 3 ) + -6");
+	test_parser("var x = 2 + -3;  var varName = x + 42;");
 	return 0;
 }

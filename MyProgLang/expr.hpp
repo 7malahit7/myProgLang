@@ -5,6 +5,7 @@
 
 namespace mpl::ast
 {
+	class decl;
 	class Expr : public Node
 	{
 	public:
@@ -44,6 +45,25 @@ namespace mpl::ast
 
 	};
 
+	class id_expr : public Expr
+	{
+	public:
+		id_expr() = delete;
+		~id_expr() = default;
+
+		id_expr(const id_expr&) = delete;
+		id_expr& operator= (const  id_expr&) = delete;
+		id_expr(id_expr&&) = delete;
+		id_expr& operator= (id_expr&&) = delete;
+
+		explicit id_expr(decl& declaration);
+
+	public:
+		const decl& declaration() const;
+		const Token& name() const;
+	private:
+		decl* m_decl;
+	};
 
 	class paren_expr : public Expr
 	{

@@ -1,5 +1,7 @@
 #pragma once
 #include "base.hpp"
+#include "expr.hpp"
+#include "decl.hpp"
 #include <concepts>
 namespace mpl::ast
 {

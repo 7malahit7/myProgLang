@@ -74,6 +74,12 @@ namespace mpl::ast
 			preview(e);
 			visit(e);
 		}
+		void visit_impl(const id_expr* e)
+		{
+			preview(e);
+			visit(e);
+		}
+
 		void visit_impl(const paren_expr* e)
 		{
 			if (preview(e))
@@ -96,6 +102,25 @@ namespace mpl::ast
 			visit(e);
 		}
 
+		void visit_impl(const var_decl* v)
+		{
+			if (preview(v))
+				visit_root(&v->initialiser());
+			visit(v);
+		}
+
+		void visit_impl(const list* l)
+		{
+			if (preview(l))
+			{
+				for (auto item : l->children())
+				{
+					visit_root(item);
+				}
+			}
+			visit(l);
+		}
+
 	private:
 		void visit_root(node_ptr n)
 		{
@@ -108,6 +133,10 @@ namespace mpl::ast
 			case ParenExpr:		visit_impl(to<paren_expr>(n));	break;
 			case UnaryExpr:		visit_impl(to<unary_expr>(n));	break;
 			case BinaryExpr:	visit_impl(to<binary_expr>(n)); break;
+			case IdExpr:		visit_impl(to<id_expr>(n));	break;
+			case VarDecl:		visit_impl(to<var_decl>(n)); break;
+			case List:			visit_impl(to<list>(n));	break;
+
 			}
 		}
 	};

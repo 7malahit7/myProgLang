@@ -1,5 +1,9 @@
 #include "lex.hpp"
 #include <array>
+#include <unordered_map>
+
+
+
 
 namespace mpl
 {
@@ -17,12 +21,22 @@ namespace mpl
 
 	constexpr auto is_operator(Lexer::char_t c)
 	{
-		constexpr std::array blanks{ '+','-', '*', '/'};
+		constexpr std::array blanks{ '+','-', '*', '/', '='};
 		return is_in_range(c, blanks.begin(), blanks.end());
 	}
 	constexpr auto is_digit(Lexer::char_t c)
 	{
 		return c >= '0' && c <= '9';
+	}
+	constexpr auto is_id_start(Lexer::char_t c)
+	{
+		return	(c >= 'a' && c <= 'z') ||
+				(c >= 'A' && c <= 'Z') ||
+				c == '_';
+	}
+	constexpr auto is_id_char(Lexer::char_t c)
+	{
+		return is_id_start || is_digit(c);
 	}
 	constexpr auto is_paren_open(Lexer::char_t c)
 	{
@@ -36,9 +50,25 @@ namespace mpl
 	{
 		return is_paren_open(c) || is_paren_close(c);
 	}
+	constexpr auto is_semi(Lexer::char_t c)
+	{
+		return c == ';';
+	}
 	constexpr auto is_separator(Lexer::char_t c)
 	{
-		return is_paren(c) || is_blank(c) || is_operator(c);
+		return is_paren(c) || is_blank(c) || is_operator(c) || is_semi(c);
+	}
+
+	static auto lookup_keywords(Token::value_type name)
+	{
+		using namespace std::literals;
+		using kw_map = std::unordered_map < Token::value_type, tok_kind>;
+		static kw_map keywords
+		{
+			{"var"sv, Token::KwVar}
+		};
+		auto found = keywords.find(name);
+		return found != keywords.end() ? found->second : Token::Idetifier;
 	}
 }
 
@@ -77,12 +107,15 @@ namespace mpl
 
 		const auto next = peek_char();
 
+		if (is_id_start(next))
+			return identifier();
 		if (is_digit(next))
 			return number();
 		if (is_operator(next))
 			return op();
 		if (is_separator(next))
 			return punctuation();
+
 
 		return consume(Token::Error);
 	}
@@ -119,7 +152,11 @@ namespace mpl
 				advance();
 		}
 
-		auto val = kind != Token::Eof ? read_str() : value_type{};
+		auto tokStr = read_str();
+		if (kind == Token::Idetifier)
+			kind = lookup_keywords(tokStr);
+
+		auto val = kind != Token::Eof ? tokStr : value_type{};
 		skip_spaces();
 		m_preview.emplace(val, kind);
 		return *m_preview;
@@ -133,6 +170,7 @@ namespace mpl
 		{
 			case('('): res = Token::ParenOpen;	break;
 			case(')'): res = Token::ParenClose; break;
+			case(';'): res = Token::Semicolon;	break;
 		}
 		return consume(res);
 	}
@@ -147,6 +185,7 @@ namespace mpl
 		case('-'): res = Token::Minus;		break;
 		case('*'): res = Token::Asterisk;	break;
 		case('/'): res = Token::Slash;		break;
+		case('='): res = Token::EqSign;		break;
 		}
 		return consume(res);
 	}
@@ -160,6 +199,21 @@ namespace mpl
 				break;
 			advance();
 			if (is_digit(next))
+				continue;
+			res = Token::Error;
+		}
+		return consume(res);
+	}
+	const Token& Lexer::identifier()
+	{
+		auto res = Token::Idetifier;
+		while (good())
+		{
+			const auto next = peek_char();
+			if (is_separator(next))
+				break;
+			advance();
+			if (is_id_char(next))
 				continue;
 			res = Token::Error;
 		}

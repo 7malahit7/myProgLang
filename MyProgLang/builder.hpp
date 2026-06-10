@@ -5,6 +5,7 @@
 #include <vector>
 #include "token.hpp"
 #include "expr.hpp"
+#include "decl.hpp"
 
 namespace mpl::ast
 {
@@ -31,11 +32,15 @@ namespace mpl::ast
 
 		void make_paren();
 		void make_literal(const Token& value);
+		void make_id(decl& d);
 		void make_unary(operation op);
 		void make_binary(operation op);
 
+		decl* make_var(const Token& name);
+		void make_list(list::size_type count);
 	private:
-		template<ast_node T, typename ...Args> requires std::constructible_from<T, Args...>
+		template<ast_node T, typename ...Args> 
+			requires std::constructible_from<T, Args...>
 		void make(Args&& ...args);
 
 		Node* extract();

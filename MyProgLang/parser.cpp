@@ -38,10 +38,53 @@ namespace mpl
 		m_lexer(input);
 		program();
 	}
+	bool Parser::good() 
+	{
+		return m_lexer.peek().what() != Token::Eof;
+	}
 	void Parser::program()
 	{
-		expr();
+		ast::list::size_type count{};
+		while (good())
+		{
+			declaration();
+			++count;
+		}
+		m_builder->make_list(count);
 		m_builder->clear_state();
+	}
+	void Parser::declaration()
+	{
+		auto&& next = m_lexer.peek();
+		if (next.what() == Token::KwVar)
+		{
+			var_decl();
+			if (m_lexer.peek().what() == Token::Semicolon)
+			{
+				m_lexer.next();
+			}
+			else
+			{
+				//error
+			}
+		}
+	}
+	void Parser::var_decl()
+	{
+		m_lexer.next();
+		auto name = m_lexer.next();
+		if (name.what() != Token::Idetifier)
+		{
+			return;
+		}
+		auto eq = m_lexer.next();
+		if (eq.what() != Token::EqSign)
+		{
+			return;
+		}
+		expr();
+		auto var = m_builder->make_var(name);
+		m_symTab.try_emplace(name.value(), var);
 	}
 	void Parser::expr()
 	{
@@ -104,6 +147,10 @@ namespace mpl
 		{
 			literal_expr();
 		}
+		else if (kind == Token::Idetifier)
+		{
+			return id_expr();
+		}
 		else
 		{
 			// error 
@@ -127,5 +174,17 @@ namespace mpl
 	{
 		auto num = m_lexer.next();
 		m_builder->make_literal(num);
+	}
+	void Parser::id_expr()
+	{
+		auto name = m_lexer.next();
+		auto foundVar = m_symTab.find(name.value());
+		if (foundVar == m_symTab.end())
+		{
+			//error
+			return;
+		}
+		auto decl = foundVar->second;
+		m_builder->make_id(*decl); 
 	}
 }

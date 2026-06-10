@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp23</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,6 +130,7 @@
     <ClCompile Include="ast.cpp" />
     <ClCompile Include="base.hpp" />
     <ClCompile Include="builder.cpp" />
+    <ClCompile Include="decl.cpp" />
     <ClCompile Include="expr.cpp" />
     <ClCompile Include="lex.cpp" />
     <ClCompile Include="main.cpp" />
@@ -138,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="ast.hpp" />
     <ClInclude Include="builder.hpp" />
+    <ClInclude Include="decl.hpp" />
     <ClInclude Include="expr.hpp" />
     <ClInclude Include="lex.hpp" />
     <ClInclude Include="parser.hpp" />

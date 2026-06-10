@@ -1,4 +1,5 @@
 #include "expr.hpp"
+#include "decl.hpp"
 
 namespace mpl::ast
 {
@@ -9,6 +10,22 @@ namespace mpl::ast
 	const Token& lit_expr::value() const
 	{
 		return m_value;
+	}
+
+	id_expr::id_expr(decl& declaration)
+		: Expr( Node::IdExpr),
+		  m_decl(& declaration)
+	{
+	}
+
+	const decl& id_expr::declaration() const
+	{
+		return *m_decl;
+	}
+
+	const Token& id_expr::name() const
+	{
+		return m_decl->name();
 	}
 
 	paren_expr::paren_expr(Node& internal)
@@ -55,5 +72,4 @@ namespace mpl::ast
 	{
 		return m_op;
 	}
-
 }

@@ -3,6 +3,7 @@
 #include "token.hpp"
 #include <optional>
 
+
 namespace mpl
 {
 	class Lexer final
@@ -42,7 +43,7 @@ namespace mpl
 		const Token& punctuation();
 		const Token& op();
 		const Token& number();
-
+		const Token& identifier();
 
 	private:
 		value_type m_buffer{};
@@ -51,3 +52,4 @@ namespace mpl
 		token_opt m_preview{};
 	};
 }
+

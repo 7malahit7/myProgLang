@@ -2,6 +2,13 @@
 
 #include "lex.hpp"
 #include "builder.hpp"
+#include <unordered_map>
+
+namespace mpl::ast
+{
+	class decl;
+}
+
 
 namespace mpl
 {
@@ -23,7 +30,10 @@ namespace mpl
 	public:
 		void operator()(input_t input);
 	private:
+		bool good();
 		void program();
+		void declaration();
+		void var_decl();
 		void expr();
 
 		void add_expr();
@@ -33,10 +43,11 @@ namespace mpl
 		void primary_expr();
 		void paren_expr();
 		void literal_expr();
+		void id_expr();
 
 	private:
 		Lexer m_lexer;
 		ast::Builder* m_builder;
-
+		std::unordered_map<input_t, ast::decl*> m_symTab;
 	};
 }
