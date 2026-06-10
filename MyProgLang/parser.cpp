@@ -1,8 +1,38 @@
 #include "parser.hpp"
-#include <iostream>
+
+namespace mpl 
+{
+	constexpr auto unary_op(tok_kind tk)
+	{
+		switch (tk)
+		{
+		case tok_kind::Plus:  return ast::operation::UnaryPos;
+		case tok_kind::Minus: return ast::operation::UnaryNeg;
+			
+		default: return ast::operation::Unknown;
+		}
+	}
+
+	constexpr auto binary_op(tok_kind tk)
+	{
+		switch (tk)
+		{
+		case tok_kind::Asterisk:  return ast::operation::Multiplication;
+		case tok_kind::Slash: return ast::operation::Division;
+		case tok_kind::Plus:  return ast::operation::Addition;
+		case tok_kind::Minus: return ast::operation::Subtraction;
+
+		default: return ast::operation::Unknown;
+		}
+	}
+}
 
 namespace mpl
 {
+	Parser::Parser(ast::Builder& builder)
+		:m_builder(&builder)
+	{
+	}
 	void Parser::operator()(input_t input)
 	{
 		m_lexer(input);
@@ -11,7 +41,7 @@ namespace mpl
 	void Parser::program()
 	{
 		expr();
-		std::cout << "done\n";
+		m_builder->clear_state();
 	}
 	void Parser::expr()
 	{
@@ -29,10 +59,7 @@ namespace mpl
 				break;
 			m_lexer.next();
 			mul_expr();
-			std::cout
-				<< "additive-expr "
-				<< (kind == Token::Plus ? '+' : '-')
-				<< '\n';
+			m_builder->make_binary(binary_op(kind));
 		}
 	}
 	void Parser::mul_expr()
@@ -47,10 +74,7 @@ namespace mpl
 				break;
 			m_lexer.next();
 			mul_expr();
-			std::cout
-				<< "multiplicative-expr "
-				<< (kind == Token::Asterisk ? '*' : '/')
-				<< '\n';
+			m_builder->make_binary(binary_op(kind));
 		}
 	}
 	void Parser::unary_expr()
@@ -65,9 +89,7 @@ namespace mpl
 		}
 		m_lexer.next();
 		unary_expr();
-		std::cout << "unary-expr "
-			<< (kind == Token::Plus ? '+' : '-')
-			<< '\n';
+		m_builder->make_unary(unary_op(kind));
 	}
 
 	void Parser::primary_expr()
@@ -84,7 +106,7 @@ namespace mpl
 		}
 		else
 		{
-			std::cout << "error in primary-expr: " << next.value() << '\n';
+			// error 
 		}
 	}
 	void Parser::paren_expr()
@@ -94,16 +116,16 @@ namespace mpl
 		auto closeParen = m_lexer.next();
 		if (closeParen.what() != Token::ParenClose)
 		{
-			std::cout << "error in paren-expr: " << closeParen.value() << '\n';
+			// error 
 		}
 		else
 		{
-			std::cout << "paren-expr\n";
+			m_builder->make_paren();
 		}
 	}
 	void Parser::literal_expr()
 	{
 		auto num = m_lexer.next();
-		std::cout << "literal-expr: " << num.value() << '\n';
+		m_builder->make_literal(num);
 	}
 }

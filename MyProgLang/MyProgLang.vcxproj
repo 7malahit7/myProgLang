@@ -127,12 +127,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ast.cpp" />
+    <ClCompile Include="base.hpp" />
+    <ClCompile Include="builder.cpp" />
+    <ClCompile Include="expr.cpp" />
     <ClCompile Include="lex.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="parser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ast.hpp" />
+    <ClInclude Include="builder.hpp" />
+    <ClInclude Include="expr.hpp" />
     <ClInclude Include="lex.hpp" />
+    <ClInclude Include="parser.hpp" />
     <ClInclude Include="token.hpp" />
+    <ClInclude Include="visitor.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

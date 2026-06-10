@@ -1,0 +1,49 @@
+#pragma once
+#include "ast.hpp"
+#include <memory>
+#include <forward_list>
+#include <vector>
+#include "token.hpp"
+#include "expr.hpp"
+
+namespace mpl::ast
+{
+	class Builder final
+	{
+	public:
+		using node_ptr = std::unique_ptr<Node>;
+		using node_storage = std::forward_list<node_ptr>;
+		using node_container = std::vector<Node*>;
+
+	public:
+		Builder() = default;
+		~Builder() = default;
+
+		Builder(const Builder&) = delete;
+		Builder& operator= (const  Builder&) = delete;
+		Builder(Builder&&) = delete;
+		Builder& operator= (Builder&&) = delete;
+
+	public:
+		const Node* root() const;
+
+		void clear_state();
+
+		void make_paren();
+		void make_literal(const Token& value);
+		void make_unary(operation op);
+		void make_binary(operation op);
+
+	private:
+		template<ast_node T, typename ...Args> requires std::constructible_from<T, Args...>
+		void make(Args&& ...args);
+
+		Node* extract();
+	private:
+		node_storage m_nodes;
+		node_container m_state;
+		Node* m_root{};
+
+	};
+
+}

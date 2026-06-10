@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lex.hpp"
+#include "builder.hpp"
 
 namespace mpl
 {
@@ -10,13 +11,15 @@ namespace mpl
 		using input_t = Lexer::value_type;
 	
 	public:
-		Parser() = default;
+		Parser() = delete;
 		~Parser() = default;
 
 		Parser(const Parser&) = delete;
 		Parser& operator=(const Parser&) = delete;
 		Parser(Parser&&) = delete;
 		Parser& operator=(Parser&&) = delete;
+
+		explicit Parser(ast::Builder& builder);
 	public:
 		void operator()(input_t input);
 	private:
@@ -33,6 +36,7 @@ namespace mpl
 
 	private:
 		Lexer m_lexer;
+		ast::Builder* m_builder;
 
 	};
 }
