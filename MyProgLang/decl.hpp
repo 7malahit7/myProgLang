@@ -40,4 +40,39 @@ namespace mpl::ast
 	private:
 		Node* m_init;
 	};
+
+	class param_decl : public decl
+	{
+	public:
+		param_decl() = delete;
+		~param_decl() = default;
+
+		param_decl(const param_decl&) = delete;
+		param_decl& operator= (const  param_decl&) = delete;
+		param_decl(param_decl&&) = delete;
+		param_decl& operator= (param_decl&&) = delete;
+
+		param_decl(const Token& name);
+	};
+
+	class func_decl : public decl
+	{
+	public:
+		func_decl() = delete;
+		~func_decl() = default;
+
+		func_decl(const func_decl&) = delete;
+		func_decl& operator= (const  func_decl&) = delete;
+		func_decl(func_decl&&) = delete;
+		func_decl& operator= (func_decl&&) = delete;
+
+		func_decl(const Token& name);
+	public:
+		void complete(const list& params, const list& body);
+		const list& params() const;
+		const list& body() const;
+	private:
+		const list* m_params{};
+		const list* m_body{};
+	};
 }

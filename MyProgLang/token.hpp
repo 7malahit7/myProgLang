@@ -8,7 +8,7 @@ namespace mpl
 	{
 		Error,
 		Eof,
-		Semicolon,
+
 
 		Plus,
 		Minus,
@@ -17,11 +17,38 @@ namespace mpl
 		ParenOpen,
 		ParenClose,
 		EqSign,
+		Eq,
+		Less,
+		LessEq,
+		Greater,
+		GreaterEq,
+		LAnd,
+		LOr,
+		NotEq,
+		Exclamation,
 
-		Idetifier,
+		Comma,
+		Semicolon,
+		CurlyOpen,
+		CurlyClose,
+
+		IntNumber,
+		FloatNumber,
+		Identifier,
 		Number,
 
-		KwVar
+		KwVar,
+		KwTrue,
+		KwFalse,
+		KwInt,
+		KwFloat,
+		KwBool,
+		KwFn,
+
+		KwRet,
+		KwIf,
+		KwElse,
+		KwWhile
 	};
 
 	class Token final

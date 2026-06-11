@@ -1,6 +1,7 @@
 #pragma once
 #include "ast.hpp"
 #include "expr.hpp"
+#include "stmt.hpp"
 
 namespace mpl::ast
 {
@@ -109,6 +110,40 @@ namespace mpl::ast
 			visit(v);
 		}
 
+		void visit_impl(const param_decl* p)
+		{
+			preview(p);
+			visit(p);
+		}
+
+		void visit_impl(const func_decl* f)
+		{
+			if (preview(f))
+			{
+				visit_root(&f->params());
+				visit_root(&f->body());
+			}
+			visit(f);
+		}
+
+		void visit_impl(const ret_stmt* r)
+		{
+			if (preview(r))
+				visit_root(r->ret_expr());
+			visit(r);
+		}
+
+		void visit_impl(const if_stmt* i)
+		{
+			if (preview(i))
+			{
+				visit_root(&i->condition());
+				visit_root(&i->true_branch());
+				visit_root(i->false_branch());
+			}
+			visit(i);
+		}
+
 		void visit_impl(const list* l)
 		{
 			if (preview(l))
@@ -135,6 +170,10 @@ namespace mpl::ast
 			case BinaryExpr:	visit_impl(to<binary_expr>(n)); break;
 			case IdExpr:		visit_impl(to<id_expr>(n));	break;
 			case VarDecl:		visit_impl(to<var_decl>(n)); break;
+			case ParamDecl:		visit_impl(to<param_decl>(n)); break;
+			case FunctionDecl:	visit_impl(to<func_decl>(n)); break;
+			case RetStmt:		visit_impl(to<ret_stmt>(n)); break;
+			case IfStmt:		visit_impl(to<if_stmt>(n)); break;
 			case List:			visit_impl(to<list>(n));	break;
 
 			}

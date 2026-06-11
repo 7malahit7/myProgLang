@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "visitor.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <print>
 
@@ -65,6 +66,12 @@ public:
 		case mpl::ast::operation::Subtraction: std::cout << '-'; break;
 		case mpl::ast::operation::Multiplication: std::cout << '*'; break;
 		case mpl::ast::operation::Division: std::cout << '/'; break;
+		case mpl::ast::operation::Less: std::cout << '<'; break;
+		case mpl::ast::operation::Greater: std::cout << '>'; break;
+		case mpl::ast::operation::LessEq: std::cout << "<="; break;
+		case mpl::ast::operation::GreaterEq: std::cout << ">="; break;
+		case mpl::ast::operation::Equal: std::cout << "=="; break;
+		case mpl::ast::operation::NEqual: std::cout << "!="; break;
 		default: std::cout << "unknown"; break;
 		}
 
@@ -83,7 +90,7 @@ public:
 	{
 		using namespace std::literals;
 		indent();
-		std::cout << "variable ref '" << expr.name().value() << "' [";
+		std::cout << "id '" << expr.name().value() << "' [";
 		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&expr.declaration()));
 		std::cout << "]\n";
 		return true;
@@ -96,6 +103,40 @@ public:
 		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
 		std::cout << "]\n";
 		m_indetations.push_back(1u);
+		return true;
+	}
+	bool preview(const mpl::ast::param_decl& decl)
+	{
+		using namespace std::literals;
+		indent();
+		std::cout << "param '" << decl.name().value() << "' [";
+		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
+		std::cout << "]\n";
+		return true;
+	}
+	bool preview(const mpl::ast::func_decl& decl)
+	{
+		using namespace std::literals;
+		indent();
+		std::cout << "function '" << decl.name().value() << "' [";
+		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
+		std::cout << "]\n";
+		m_indetations.push_back(2u);
+		return true;
+	}
+	bool preview(const mpl::ast::ret_stmt& stmt)
+	{
+		indent();
+		std::cout << "return\n";
+		if (stmt.ret_expr())
+			m_indetations.push_back(1u);
+		return true;
+	}
+	bool preview(const mpl::ast::if_stmt& stmt)
+	{
+		indent();
+		std::cout << "if\n";
+		m_indetations.push_back(stmt.false_branch() ? 3u : 2u);
 		return true;
 	}
 private:
@@ -149,6 +190,21 @@ private:
 	child_tracker m_indetations;
 };
 
+auto read_file()
+{
+	std::string buffer;
+	std::ifstream in{ "C:/MyProgLang/MyProgLang/input.txt" };
+
+	in.seekg(0, std::ios::end);
+	buffer.reserve(in.tellg());
+
+	in.seekg(0, std::ios::beg);
+
+	using it = std::istreambuf_iterator < std::string::value_type>;
+	buffer.assign(it{ in }, it{});
+
+	return buffer;
+}
 
 void echo(std::string_view input)
 {
@@ -195,6 +251,7 @@ void test_parser(std::string_view input)
 
 int main()
 {
-	test_parser("var x = 2 + -3;  var varName = x + 42;");
+	auto buffer = read_file();
+	test_parser(buffer);
 	return 0;
 }

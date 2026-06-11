@@ -93,7 +93,17 @@ namespace mpl::ast
 		Addition,
 		Subtraction,
 		Multiplication,
-		Division
+		Division,
+		UnaryNot,
+		Assign,
+		Equal,
+		NEqual,
+		Less,
+		Greater,
+		LessEq,
+		GreaterEq,
+		LogAnd,
+		LogOr
 	};
 
 	class unary_expr : public Expr

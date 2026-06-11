@@ -72,6 +72,53 @@ namespace mpl::ast
 		return static_cast<decl*>(m_root);
 	}
 
+	decl* Builder::make_param(const Token& name)
+	{
+		make<param_decl>(name);
+		return static_cast<decl*>(m_root);
+	}
+
+	func_decl* Builder::prepare_func(const Token& name)
+	{
+		make<func_decl>(name);
+		return static_cast<func_decl*>(m_root);
+	}
+
+	void Builder::complete_func(func_decl& decl)
+	{
+		auto body = extract();
+		auto params = extract();
+		if (params && body)
+		{
+			decl.complete(static_cast<const list&>(*params), static_cast<const list&>(*body));
+		}
+	}
+
+	void Builder::make_empty_ret()
+	{
+		make<ret_stmt>(nullptr);
+	}
+
+	void Builder::make_ret()
+	{
+		make<ret_stmt>(extract());
+	}
+
+	void Builder::make_if(bool hasElse)
+	{
+		auto falseBranch = hasElse ? extract() : nullptr;
+		auto trueBranch = extract();
+		auto condition = extract();
+		if (condition && trueBranch)
+		{
+			make<if_stmt>(*condition, *trueBranch, falseBranch);
+		}
+	}
+
+	void Builder::make_call()
+	{
+	}
+
 	void Builder::make_list(list::size_type count)
 	{
 		const auto availableSz = static_cast<list::size_type>(m_state.size());

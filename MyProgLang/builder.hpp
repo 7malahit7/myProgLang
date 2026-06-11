@@ -6,6 +6,7 @@
 #include "token.hpp"
 #include "expr.hpp"
 #include "decl.hpp"
+#include "stmt.hpp"
 
 namespace mpl::ast
 {
@@ -37,6 +38,13 @@ namespace mpl::ast
 		void make_binary(operation op);
 
 		decl* make_var(const Token& name);
+		decl* make_param(const Token& name);
+		func_decl* prepare_func(const Token& name);
+		void complete_func(func_decl& decl);
+		void make_empty_ret();
+		void make_ret();
+		void make_if(bool hasElse);
+		void make_call();
 		void make_list(list::size_type count);
 	private:
 		template<ast_node T, typename ...Args> 

@@ -12,6 +12,9 @@ namespace mpl::ast
 
 namespace mpl
 {
+	template <typename F>
+	concept list_handler = std::is_invocable_r_v<bool, F>;
+
 	class Parser final
 	{
 	public:
@@ -33,13 +36,24 @@ namespace mpl
 		bool good();
 		void program();
 		void declaration();
+		void func_decl();
+		void param_list();
+		void param_decl();
+		void compound_statement();
+		void statement(bool requireSemi);
+		void return_statement();
+		void condition();
+		void if_statement();
 		void var_decl();
 		void expr();
 
 		void add_expr();
 		void mul_expr();
 
+		void postfix_expr();
 		void unary_expr();
+		void list(list_handler auto handler, tok_kind breakOn);
+		void binary_expr(std::size_t precIdx);
 		void primary_expr();
 		void paren_expr();
 		void literal_expr();

@@ -14,7 +14,12 @@ namespace mpl::ast
 		UnaryExpr,
 		BinaryExpr,
 
-		VarDecl
+		VarDecl,
+		ParamDecl,
+		FunctionDecl,
+
+		RetStmt,
+		IfStmt
 	};
 
 	class Node

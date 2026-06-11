@@ -21,8 +21,20 @@ namespace mpl
 
 	constexpr auto is_operator(Lexer::char_t c)
 	{
-		constexpr std::array blanks{ '+','-', '*', '/', '='};
+		constexpr std::array blanks{ '+','-', '*', '/', '=', '<', '>', '!', '&', '|'};
 		return is_in_range(c, blanks.begin(), blanks.end());
+	}
+	constexpr auto is_comma(Lexer::char_t c)
+	{
+		return c == ',';
+	}
+	constexpr auto is_curly_open(Lexer::char_t c)
+	{
+		return c == '{';
+	}
+	constexpr auto is_curly_close(Lexer::char_t c)
+	{
+		return c == '}';
 	}
 	constexpr auto is_digit(Lexer::char_t c)
 	{
@@ -36,11 +48,15 @@ namespace mpl
 	}
 	constexpr auto is_id_char(Lexer::char_t c)
 	{
-		return is_id_start || is_digit(c);
+		return is_id_start(c) || is_digit(c);
 	}
 	constexpr auto is_paren_open(Lexer::char_t c)
 	{
 		return c == '(';
+	}
+	constexpr auto is_dot(Lexer::char_t c)
+	{
+		return c == '.';
 	}
 	constexpr auto is_paren_close(Lexer::char_t c)
 	{
@@ -56,7 +72,13 @@ namespace mpl
 	}
 	constexpr auto is_separator(Lexer::char_t c)
 	{
-		return is_paren(c) || is_blank(c) || is_operator(c) || is_semi(c);
+		return is_paren(c) ||
+			is_blank(c) ||
+			is_operator(c) ||
+			is_semi(c) ||
+			is_comma(c) ||
+			is_curly_open(c) ||
+			is_curly_close(c);
 	}
 
 	static auto lookup_keywords(Token::value_type name)
@@ -65,10 +87,20 @@ namespace mpl
 		using kw_map = std::unordered_map < Token::value_type, tok_kind>;
 		static kw_map keywords
 		{
-			{"var"sv, Token::KwVar}
+			{"var"sv, Token::KwVar},
+			{"fn"sv,  Token::KwFn},
+			{"int"sv, Token::KwInt},
+			{"float"sv, Token::KwFloat},
+			{"bool"sv, Token::KwBool},
+			{"true"sv, Token::KwTrue},
+			{"false"sv, Token::KwFalse},
+			{"return"sv, Token::KwRet},
+			{"if"sv, Token::KwIf},
+			{"else"sv, Token::KwElse},
+			{"while"sv, Token::KwWhile},
 		};
 		auto found = keywords.find(name);
-		return found != keywords.end() ? found->second : Token::Idetifier;
+		return found != keywords.end() ? found->second : Token::Identifier;
 	}
 }
 
@@ -102,22 +134,22 @@ namespace mpl
 		if (m_preview)
 			return *m_preview;
 
-		if (!good())
-			return consume(Token::Eof);
+if (!good())
+return consume(Token::Eof);
 
-		const auto next = peek_char();
+const auto next = peek_char();
 
-		if (is_id_start(next))
-			return identifier();
-		if (is_digit(next))
-			return number();
-		if (is_operator(next))
-			return op();
-		if (is_separator(next))
-			return punctuation();
+if (is_id_start(next))
+return identifier();
+if (is_digit(next))
+return number();
+if (is_operator(next))
+return op();
+if (is_separator(next))
+return punctuation();
 
 
-		return consume(Token::Error);
+return consume(Token::Error);
 	}
 
 	bool Lexer::good() const
@@ -153,7 +185,7 @@ namespace mpl
 		}
 
 		auto tokStr = read_str();
-		if (kind == Token::Idetifier)
+		if (kind == Token::Identifier)
 			kind = lookup_keywords(tokStr);
 
 		auto val = kind != Token::Eof ? tokStr : value_type{};
@@ -168,9 +200,12 @@ namespace mpl
 		auto res = Token::Error;
 		switch (next)
 		{
-			case('('): res = Token::ParenOpen;	break;
-			case(')'): res = Token::ParenClose; break;
-			case(';'): res = Token::Semicolon;	break;
+		case('('): res = Token::ParenOpen;	break;
+		case(')'): res = Token::ParenClose; break;
+		case(';'): res = Token::Semicolon;	break;
+		case(','): res = Token::Comma;		break;
+		case('{'): res = Token::CurlyOpen;	break;
+		case('}'): res = Token::CurlyClose;	break;
 		}
 		return consume(res);
 	}
@@ -185,28 +220,92 @@ namespace mpl
 		case('-'): res = Token::Minus;		break;
 		case('*'): res = Token::Asterisk;	break;
 		case('/'): res = Token::Slash;		break;
-		case('='): res = Token::EqSign;		break;
+		case('='):
+			if (peek_char() == '=')
+			{
+				advance();
+				res = Token::Eq;
+			}
+			else
+			{
+				res = Token::EqSign;
+			}
+			break;
+		case('<'):
+			if (peek_char() == '=')
+			{
+				advance();
+				res = Token::LessEq;
+			}
+			else
+			{
+				res = Token::Less;
+			}
+			break;
+		case('>'):
+			if (peek_char() == '=')
+			{
+				advance();
+				res = Token::GreaterEq;
+			}
+			else
+			{
+				res = Token::Greater;
+			}
+			break;
+		case('!'):
+			if (peek_char() == '=')
+			{
+				advance();
+				res = Token::NotEq;
+			}
+			else
+			{
+				res = Token::Exclamation;
+			}
+			break;
+		case('&'):
+			if (peek_char() == '&')
+			{
+				advance();
+				res = Token::LAnd;
+			}
+			break;
+		case('|'):
+			if (peek_char() == '|')
+			{
+				advance();
+				res = Token::LOr;
+			}
+			break;
 		}
 		return consume(res);
 	}
 	const Token& Lexer::number()
 	{
-		auto res = Token::Number;
+		auto res = Token::IntNumber;
 		while (good())
 		{
 			const auto next = peek_char();
-			if (is_separator(next))
-				break;
 			advance();
 			if (is_digit(next))
 				continue;
+			if (is_dot(next) && res == Token::IntNumber)
+			{
+				res = Token::FloatNumber;
+				advance();
+				continue;
+			}
+			if (is_separator(next))
+				break;
+ 
 			res = Token::Error;
 		}
 		return consume(res);
 	}
 	const Token& Lexer::identifier()
 	{
-		auto res = Token::Idetifier;
+		auto res = Token::Identifier;
 		while (good())
 		{
 			const auto next = peek_char();

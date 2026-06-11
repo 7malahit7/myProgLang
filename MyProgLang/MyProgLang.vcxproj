@@ -135,6 +135,8 @@
     <ClCompile Include="lex.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="sema.cpp" />
+    <ClCompile Include="symtab.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ast.hpp" />
@@ -143,8 +145,14 @@
     <ClInclude Include="expr.hpp" />
     <ClInclude Include="lex.hpp" />
     <ClInclude Include="parser.hpp" />
+    <ClInclude Include="sema.hpp" />
+    <ClInclude Include="stmt.hpp" />
+    <ClInclude Include="symtab.hpp" />
     <ClInclude Include="token.hpp" />
     <ClInclude Include="visitor.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="input.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
