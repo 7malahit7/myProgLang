@@ -1,8 +1,4 @@
-fn fff(int a)
+fn f()
 {
-  if(a > 0)
-    return 1;
-  else if(a < 10)
-    return 2;
-  else return 3;
+ (2 + 3) = 4;
 }

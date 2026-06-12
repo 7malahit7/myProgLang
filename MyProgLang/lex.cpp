@@ -287,18 +287,21 @@ return consume(Token::Error);
 		while (good())
 		{
 			const auto next = peek_char();
-			advance();
+			if (is_separator(next))
+				break;
 			if (is_digit(next))
+			{
+				advance();
 				continue;
+			}
 			if (is_dot(next) && res == Token::IntNumber)
 			{
 				res = Token::FloatNumber;
 				advance();
 				continue;
 			}
-			if (is_separator(next))
-				break;
  
+			advance();
 			res = Token::Error;
 		}
 		return consume(res);

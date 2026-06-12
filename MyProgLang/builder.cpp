@@ -17,6 +17,18 @@ namespace mpl::ast
 		return m_root;
 	}
 
+	const Node* Builder::last() const
+	{
+		if (m_state.empty())
+			return {};
+		return m_state.back();
+	}
+
+	Builder::node_container::size_type Builder::state_size() const
+	{
+		return m_state.size();
+	}
+
 	void Builder::clear_state()
 	{
 		m_state.clear();
@@ -56,6 +68,40 @@ namespace mpl::ast
 		{
 			make<binary_expr>(*lhs, *rhs, op);
 		}
+	}
+
+	void Builder::make_assign(const Token& op)
+	{
+		auto rhs = extract();
+		auto lhs = extract();
+		if (!lhs || !rhs)
+			return;
+
+		if (lhs->what() != Node::IdExpr)
+		{
+			if (lhs->what() == Node::ParenExpr)
+			{
+				auto paren = static_cast<paren_expr*>(lhs);
+				auto err = m_nodes.emplace_front(
+					std::make_unique<error>(op, "Expected an identifier")).get();
+
+				paren_expr::data_type items;
+				items.push_back(&paren->internal_expr());
+				items.push_back(err);
+
+				auto replacement = m_nodes.emplace_front(std::make_unique<paren_expr>(std::move(items))).get();
+				lhs = replacement;
+			}
+			else
+			{
+				m_state.push_back(lhs);
+				m_root = lhs;
+				make_error(op, "Expected an identifier");
+				make_list(2);
+				lhs = extract();
+			}
+		}
+		make<binary_expr>(*lhs, *rhs, operation::Assign);
 	}
 
 	decl* Builder::make_var(const Token& name)
@@ -106,12 +152,29 @@ namespace mpl::ast
 
 	void Builder::make_if(bool hasElse)
 	{
-		auto falseBranch = hasElse ? extract() : nullptr;
-		auto trueBranch = extract();
-		auto condition = extract();
+		node_container errors;
+		auto extract_branch = [&]() -> Node*
+			{
+				while (auto lastNode = last())
+				{
+					if (lastNode->what() != Node::Error)
+						break;
+					errors.push_back(extract());
+				}
+				return extract();
+			};
+
+		auto falseBranch = hasElse ? extract_branch() : nullptr;
+		auto trueBranch = extract_branch();
+		auto condition = extract_branch();
 		if (condition && trueBranch)
 		{
 			make<if_stmt>(*condition, *trueBranch, falseBranch);
+		}
+		for (auto it = errors.rbegin(); it != errors.rend(); ++it)
+		{
+			m_state.push_back(*it);
+			m_root = *it;
 		}
 	}
 
@@ -124,7 +187,6 @@ namespace mpl::ast
 		const auto availableSz = static_cast<list::size_type>(m_state.size());
 		if (availableSz < count)
 		{
-			//error
 			return;
 		}
 		const auto startPos = availableSz - count;
@@ -146,5 +208,9 @@ namespace mpl::ast
 		auto item = m_state.back();
 		m_state.pop_back();
 		return item;
+	}
+	void Builder::make_error(const Token& at, error_msg message)
+	{
+		make<error>(at, message);
 	}
 }

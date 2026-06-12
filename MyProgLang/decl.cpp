@@ -15,6 +15,7 @@ namespace mpl::ast
 	var_decl::var_decl(const Token& name, Node& init)
 		: decl(Node::VarDecl, name), m_init(&init)
 	{
+		validate(&init);
 	}
 
 	const Node& var_decl::initialiser() const
@@ -36,6 +37,8 @@ namespace mpl::ast
 	{
 		m_params = &params;
 		m_body = &body;
+		validate(&params);
+		validate(&body);
 	}
 
 	const list& func_decl::params() const

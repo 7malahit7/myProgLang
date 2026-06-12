@@ -55,33 +55,36 @@ namespace mpl
 	}
 	enum class precedence : std::uint8_t
 	{
-		Additive,
-		Multiplicative,
-		Relational,
-		Equality,
+		Assignment,
+		LogicalOr,
 		LogicalAnd,
-		LogicalOr
+		Equality,
+		Relational,
+		Additive,
+		Multiplicative
 	};
 
 	constexpr auto match_precedence(tok_kind tk, precedence pr)
 	{
 		switch (pr)
 		{
-		case precedence::Additive:
-			return tk == Token::Plus || tk == Token::Minus;
-		case precedence::Multiplicative:
-			return tk == Token::Asterisk || tk == Token::Slash;
+		case precedence::Assignment:
+			return tk == Token::EqSign;
+		case precedence::LogicalOr:
+			return tk == Token::LOr;
+		case precedence::LogicalAnd:
+			return tk == Token::LAnd;
+		case precedence::Equality:
+			return tk == Token::Eq || tk == Token::NotEq;
 		case precedence::Relational:
 			return tk == Token::Less ||
 				tk == Token::LessEq ||
 				tk == Token::Greater ||
 				tk == Token::GreaterEq;
-		case precedence::Equality:
-			return tk == Token::Eq || tk == Token::NotEq;
-		case precedence::LogicalAnd:
-			return tk == Token::LAnd;
-		case precedence::LogicalOr:
-			return tk == Token::LOr;
+		case precedence::Additive:
+			return tk == Token::Plus || tk == Token::Minus;
+		case precedence::Multiplicative:
+			return tk == Token::Asterisk || tk == Token::Slash;
 		}
 		return false;
 	}
@@ -104,6 +107,7 @@ namespace mpl
 	}
 	void Parser::program()
 	{
+		m_sema.enter_new_scope();
 		list([&]
 			{
 				if (m_lexer.peek().what() == Token::Semicolon)
@@ -115,6 +119,7 @@ namespace mpl
 				return true;
 			}, Token::Eof);
 		m_builder->clear_state();
+		m_sema.exit_scope();
 	}
 	void Parser::declaration()
 	{
@@ -128,12 +133,17 @@ namespace mpl
 			}
 			else
 			{
-				//error
+				error(m_lexer.peek(), "Expected ;");
 			}
 		}
 		else if (next.what() == Token::KwFn)
 		{
 			func_decl();
+		}
+		else
+		{
+			auto errPos = m_lexer.next();
+			error(errPos, "Expected declaration");
 		}
 	}
 
@@ -144,21 +154,24 @@ namespace mpl
 		auto name = m_lexer.next();
 		if (name.what() != Token::Identifier)
 		{
-			// error
+			error(name, "Expected function name");
+			return;
 		}
 
 		auto decl = m_builder->prepare_func(name);
-		m_symTab[name.value()] = decl;
+		m_sema.record(*decl);
+		m_sema.enter_new_scope();
 		param_list();
 		compound_statement();
 		m_builder->complete_func(*decl);
+		m_sema.exit_scope();
 	}
 
 	void Parser::param_list()
 	{
 		if (m_lexer.peek().what() != Token::ParenOpen)
 		{
-			//error
+			error(m_lexer.peek(), "Expected '(' before parameter list");
 			return;
 		}
 		m_lexer.next();
@@ -169,10 +182,20 @@ namespace mpl
 				{
 					m_lexer.next();
 				}
+				else if (m_lexer.peek().what() != Token::ParenClose)
+				{
+					error(m_lexer.peek(), "Expected ',' between parameters");
+				}
 				return true;
 			}, Token::ParenClose);
-		// )
-		m_lexer.next();
+		if (m_lexer.peek().what() != Token::ParenClose)
+		{
+			error(m_lexer.peek(), "Expected ')' after parameter list");
+		}
+		else
+		{
+			m_lexer.next();
+		}
 	}
 
 	void Parser::param_decl()
@@ -180,25 +203,27 @@ namespace mpl
 		auto typeName = m_lexer.next();
 		if (!is_type_name(typeName.what()))
 		{
-			// error
+			error(typeName, "Expected parameter type");
 		}
 		if (m_lexer.peek().what() != Token::Identifier)
 		{
-			// error
+			error(m_lexer.peek(), "Expected parameter name");
+			return;
 		}
 		auto name = m_lexer.next();
 		auto param = m_builder->make_param(name);
-		m_symTab[name.value()] = param;
+		m_sema.record(*param);
 	}
 
 	void Parser::compound_statement()
 	{
 		if (m_lexer.peek().what() != Token::CurlyOpen)
 		{
-			// error
+			error(m_lexer.peek(), "Expected '{' before compound statement");
 			return;
 		}
 		m_lexer.next();
+		m_sema.enter_new_scope();
 		list([&]
 			{
 				if (m_lexer.peek().what() == Token::Semicolon)
@@ -209,7 +234,15 @@ namespace mpl
 				statement(true);
 				return true;
 			}, Token::CurlyClose);
-		m_lexer.next();
+		if (m_lexer.peek().what() != Token::CurlyClose)
+		{
+			error(m_lexer.peek(), "Expected '}' after compound statement");
+		}
+		else
+		{
+			m_lexer.next();
+		}
+		m_sema.exit_scope();
 	}
 
 	void Parser::statement(bool requireSemi)
@@ -241,7 +274,7 @@ namespace mpl
 			}
 			else
 			{
-				// error
+				error(m_lexer.peek(), "Expected ';' after statement");
 			}
 		}
 	}
@@ -262,7 +295,7 @@ namespace mpl
 	{
 		if (m_lexer.peek().what() != Token::ParenOpen)
 		{
-			// error
+			error(m_lexer.peek(), "Expected '(' before condition");
 		}
 		else
 		{
@@ -274,7 +307,7 @@ namespace mpl
 
 		if (m_lexer.peek().what() != Token::ParenClose)
 		{
-			// error
+			error(m_lexer.peek(), "Expected ')' after condition");
 		}
 		else
 		{
@@ -305,16 +338,19 @@ namespace mpl
 		auto name = m_lexer.next();
 		if (name.what() != Token::Identifier)
 		{
+			error(name, "Expected variable name");
 			return;
 		}
 		auto eq = m_lexer.next();
 		if (eq.what() != Token::EqSign)
 		{
+			error(eq, "Expected '=' after variable name");
 			return;
 		}
 		expr();
 		auto var = m_builder->make_var(name);
-		m_symTab[name.value()] = var;
+		if (var)
+			m_sema.record(*var);
 	}
 	void Parser::expr()
 	{
@@ -372,8 +408,11 @@ namespace mpl
 		{
 			if (m_lexer.peek().what() == breakOn)
 				break;
-			if (handler())
-				++count;
+			const auto before = m_builder->state_size();
+			handler();
+			const auto after = m_builder->state_size();
+			if (after > before)
+				count += after - before;
 		}
 		m_builder->make_list(count);
 	}
@@ -393,12 +432,20 @@ namespace mpl
 					expr();
 					if (m_lexer.peek().what() != Token::Comma)
 					{
-						//error
+						if (m_lexer.peek().what() != Token::ParenClose)
+							error(m_lexer.peek(), "Expected ',' between call arguments");
 					}
 					return true;
 				}, 
 				Token::ParenClose);
-			m_lexer.next();
+			if (m_lexer.peek().what() != Token::ParenClose)
+			{
+				error(m_lexer.peek(), "Expected ')' after call arguments");
+			}
+			else
+			{
+				m_lexer.next();
+			}
 			m_builder->make_call();
 		}
 	}
@@ -406,6 +453,7 @@ namespace mpl
 	{
 		static constexpr std::array precOrder
 		{
+			precedence::Assignment,
 			precedence::LogicalOr,
 			precedence::LogicalAnd,
 			precedence::Equality,
@@ -425,10 +473,18 @@ namespace mpl
 			const auto opKind = m_lexer.peek().what();
 			if (!match_precedence(opKind, precOrder[precIdx]))
 				break;
-			m_lexer.next();
+			auto op = m_lexer.next();
 			binary_expr(nextIdx);
-			m_builder->make_binary(binary_op(opKind));
+			if (is_assign(binary_op(opKind)))
+				m_builder->make_assign(op);
+			else
+				m_builder->make_binary(binary_op(opKind));
 		}
+	}
+
+	void Parser::error(const Token& at, ast::Builder::error_msg msg)
+	{
+		m_builder->make_error(at, msg);
 	}
 
 	void Parser::primary_expr()
@@ -449,20 +505,26 @@ namespace mpl
 		}
 		else
 		{
-			// error 
+			auto errPos = m_lexer.next();
+			error(errPos, "Unexpected token");
 		}
 	}
 	void Parser::paren_expr()
 	{
 		m_lexer.next();
+		const auto stateSize = m_builder->state_size();
 		expr();
-		auto closeParen = m_lexer.next();
+		auto closeParen = m_lexer.peek();
 		if (closeParen.what() != Token::ParenClose)
 		{
-			// error 
+			error(closeParen, "Expected )");
+			const auto count = m_builder->state_size() - stateSize;
+			m_builder->make_list(count);
+			m_builder->make_paren();
 		}
 		else
 		{
+			m_lexer.next();
 			m_builder->make_paren();
 		}
 	}
@@ -474,13 +536,12 @@ namespace mpl
 	void Parser::id_expr()
 	{
 		auto name = m_lexer.next();
-		auto foundVar = m_symTab.find(name.value());
-		if (foundVar == m_symTab.end())
+		auto foundVar = m_sema.lookup(name.value());
+		if (!foundVar)
 		{
-			//error
+			error(name, "Undeclared identifier");
 			return;
 		}
-		auto decl = foundVar->second;
-		m_builder->make_id(*decl); 
+		m_builder->make_id(*foundVar);
 	}
 }

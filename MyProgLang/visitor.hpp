@@ -84,7 +84,12 @@ namespace mpl::ast
 		void visit_impl(const paren_expr* e)
 		{
 			if (preview(e))
-				visit_root(&e->internal_expr());
+			{
+				for (auto item : e->children())
+				{
+					visit_root(item);
+				}
+			}
 			visit(e);
 		}
 		void visit_impl(const unary_expr* e)
@@ -156,6 +161,12 @@ namespace mpl::ast
 			visit(l);
 		}
 
+		void visit_impl(const error* e)
+		{
+			preview(e);
+			visit(e);
+		}
+
 	private:
 		void visit_root(node_ptr n)
 		{
@@ -174,6 +185,7 @@ namespace mpl::ast
 			case FunctionDecl:	visit_impl(to<func_decl>(n)); break;
 			case RetStmt:		visit_impl(to<ret_stmt>(n)); break;
 			case IfStmt:		visit_impl(to<if_stmt>(n)); break;
+			case Error:			visit_impl(to<error>(n)); break;
 			case List:			visit_impl(to<list>(n));	break;
 
 			}

@@ -31,14 +31,18 @@ public:
 	bool preview(const mpl::ast::lit_expr& expr)
 	{
 		indent();
-		std::cout << "literal '" << expr.value().value() << "'\n";
+		std::cout << "literal '" << expr.value().value() << "'";
+		print_errors(expr);
+		std::cout << "\n";
 		return true;
 	}
 	bool preview(const mpl::ast::paren_expr& expr)
 	{
 		indent();
-		std::cout << "paren\n";
-		m_indetations.push_back(1u);
+		std::cout << "paren";
+		print_errors(expr);
+		std::cout << "\n";
+		m_indetations.push_back(expr.children().size());
 		return true;
 	}
 	bool preview(const mpl::ast::unary_expr& expr)
@@ -52,16 +56,22 @@ public:
 		default: std::cout << "unknown"; break;
 		}
 
-		std::cout << "'\n";
+		std::cout << "'";
+		print_errors(expr);
+		std::cout << "\n";
 		m_indetations.push_back(1u);
 		return true;
 	}
 	bool preview(const mpl::ast::binary_expr& expr)
 	{
 		indent();
-		std::cout << "binary '";
+		if (expr.op() == mpl::ast::operation::Assign)
+			std::cout << "assign '";
+		else
+			std::cout << "binary '";
 		switch (expr.op())
 		{
+		case mpl::ast::operation::Assign: std::cout << '='; break;
 		case mpl::ast::operation::Addition: std::cout << '+'; break;
 		case mpl::ast::operation::Subtraction: std::cout << '-'; break;
 		case mpl::ast::operation::Multiplication: std::cout << '*'; break;
@@ -75,14 +85,18 @@ public:
 		default: std::cout << "unknown"; break;
 		}
 
-		std::cout << "'\n";
+		std::cout << "'";
+		print_errors(expr);
+		std::cout << "\n";
 		m_indetations.push_back(2u);
 		return true;
 	}
 	bool preview(const mpl::ast::list& list)
 	{
 		indent();
-		std::cout << "list\n";
+		std::cout << "list";
+		print_errors(list);
+		std::cout << "\n";
 		m_indetations.push_back(list.children().size());
 		return true;
 	}
@@ -92,7 +106,9 @@ public:
 		indent();
 		std::cout << "id '" << expr.name().value() << "' [";
 		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&expr.declaration()));
-		std::cout << "]\n";
+		std::cout << "]";
+		print_errors(expr);
+		std::cout << "\n";
 		return true;
 	}
 	bool preview(const mpl::ast::var_decl& decl)
@@ -101,7 +117,9 @@ public:
 		indent();
 		std::cout << "variable '" << decl.name().value() << "' [";
 		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
-		std::cout << "]\n";
+		std::cout << "]";
+		print_errors(decl);
+		std::cout << "\n";
 		m_indetations.push_back(1u);
 		return true;
 	}
@@ -111,7 +129,9 @@ public:
 		indent();
 		std::cout << "param '" << decl.name().value() << "' [";
 		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
-		std::cout << "]\n";
+		std::cout << "]";
+		print_errors(decl);
+		std::cout << "\n";
 		return true;
 	}
 	bool preview(const mpl::ast::func_decl& decl)
@@ -120,14 +140,18 @@ public:
 		indent();
 		std::cout << "function '" << decl.name().value() << "' [";
 		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
-		std::cout << "]\n";
+		std::cout << "]";
+		print_errors(decl);
+		std::cout << "\n";
 		m_indetations.push_back(2u);
 		return true;
 	}
 	bool preview(const mpl::ast::ret_stmt& stmt)
 	{
 		indent();
-		std::cout << "return\n";
+		std::cout << "return";
+		print_errors(stmt);
+		std::cout << "\n";
 		if (stmt.ret_expr())
 			m_indetations.push_back(1u);
 		return true;
@@ -135,11 +159,28 @@ public:
 	bool preview(const mpl::ast::if_stmt& stmt)
 	{
 		indent();
-		std::cout << "if\n";
+		std::cout << "if";
+		print_errors(stmt);
+		std::cout << "\n";
 		m_indetations.push_back(stmt.false_branch() ? 3u : 2u);
 		return true;
 	}
+	bool preview(const mpl::ast::error& err)
+	{
+		indent();
+		std::cout << "error: '" << err.message() << "'";
+		if (!err.at().value().empty())
+			std::cout << " at " << err.at().value();
+		std::cout << "\n";
+		return true;
+	}
 private:
+	void print_errors(const mpl::ast::Node& node)
+	{
+		if (!node.is_valid())
+			std::cout << " has-errors";
+	}
+
 	void indent()
 	{
 		while (!m_indetations.empty())
@@ -242,7 +283,6 @@ void test_lex(std::string_view input)
 
 void test_parser(std::string_view input)
 {
-	echo(input);
 	mpl::ast::Builder builder;
 	mpl::Parser parser(builder);
 	parser(input);

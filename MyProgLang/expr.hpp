@@ -68,6 +68,9 @@ namespace mpl::ast
 	class paren_expr : public Expr
 	{
 	public:
+		using data_type = list::data_type;
+
+	public:
 		paren_expr() = delete;
 		~paren_expr() = default;
 
@@ -77,12 +80,14 @@ namespace mpl::ast
 		paren_expr& operator= (paren_expr&&) = delete;
 
 		explicit paren_expr(Node& internal);
+		explicit paren_expr(data_type items);
 
 	public:
 		const Node& internal_expr() const;
+		const data_type& children() const;
 
 	private:
-		Node* m_expr;
+		data_type m_children;
 	};
 
 	enum class operation : std::uint8_t

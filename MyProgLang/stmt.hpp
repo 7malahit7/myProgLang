@@ -47,6 +47,7 @@ namespace mpl::ast
 	inline ret_stmt::ret_stmt(Node* retExpr)
 		: Node(Node::RetStmt), m_retExpr(retExpr)
 	{
+		validate(retExpr);
 	}
 
 	inline const Node* ret_stmt::ret_expr() const
@@ -60,6 +61,9 @@ namespace mpl::ast
 		  m_trueBranch(&trueBranch),
 		  m_falseBranch(falseBranch)
 	{
+		validate(&cond);
+		validate(&trueBranch);
+		validate(falseBranch);
 	}
 
 	inline const Node& if_stmt::condition() const

@@ -3,6 +3,7 @@
 #include "lex.hpp"
 #include "builder.hpp"
 #include <unordered_map>
+#include "sema.hpp"
 
 namespace mpl::ast
 {
@@ -54,6 +55,7 @@ namespace mpl
 		void unary_expr();
 		void list(list_handler auto handler, tok_kind breakOn);
 		void binary_expr(std::size_t precIdx);
+		void error(const Token& at, ast::Builder::error_msg msg);
 		void primary_expr();
 		void paren_expr();
 		void literal_expr();
@@ -61,6 +63,7 @@ namespace mpl
 
 	private:
 		Lexer m_lexer;
+		sema m_sema;
 		ast::Builder* m_builder;
 		std::unordered_map<input_t, ast::decl*> m_symTab;
 	};

@@ -8,6 +8,7 @@
 #include "decl.hpp"
 #include "stmt.hpp"
 
+
 namespace mpl::ast
 {
 	class Builder final
@@ -16,6 +17,7 @@ namespace mpl::ast
 		using node_ptr = std::unique_ptr<Node>;
 		using node_storage = std::forward_list<node_ptr>;
 		using node_container = std::vector<Node*>;
+		using error_msg = std::string_view;
 
 	public:
 		Builder() = default;
@@ -28,6 +30,8 @@ namespace mpl::ast
 
 	public:
 		const Node* root() const;
+		const Node* last() const;
+		node_container::size_type state_size() const;
 
 		void clear_state();
 
@@ -36,6 +40,7 @@ namespace mpl::ast
 		void make_id(decl& d);
 		void make_unary(operation op);
 		void make_binary(operation op);
+		void make_assign(const Token& op);
 
 		decl* make_var(const Token& name);
 		decl* make_param(const Token& name);
@@ -46,12 +51,14 @@ namespace mpl::ast
 		void make_if(bool hasElse);
 		void make_call();
 		void make_list(list::size_type count);
+		void make_error(const Token& at, error_msg message);
 	private:
 		template<ast_node T, typename ...Args> 
 			requires std::constructible_from<T, Args...>
 		void make(Args&& ...args);
 
 		Node* extract();
+
 	private:
 		node_storage m_nodes;
 		node_container m_state;
