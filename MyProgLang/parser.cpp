@@ -160,10 +160,18 @@ namespace mpl
 
 		auto decl = m_builder->prepare_func(name);
 		m_sema.record(*decl);
+		m_sema.begin_function(*decl);
 		m_sema.enter_new_scope();
 		param_list();
+		m_builder->specify_func_params(*decl);
+		if (is_type_name(m_lexer.peek().what()))
+		{
+			auto retType = m_lexer.next();
+			decl->specify_ret(sema::keyword_type(retType));
+		}
 		compound_statement();
 		m_builder->complete_func(*decl);
+		m_sema.end_function();
 		m_sema.exit_scope();
 	}
 
@@ -211,7 +219,7 @@ namespace mpl
 			return;
 		}
 		auto name = m_lexer.next();
-		auto param = m_builder->make_param(name);
+		auto param = m_builder->make_param(name, sema::keyword_type(typeName));
 		m_sema.record(*param);
 	}
 
@@ -284,10 +292,12 @@ namespace mpl
 		m_lexer.next();
 		if (m_lexer.peek().what() == Token::Semicolon)
 		{
+			m_sema.handle_return(nullptr);
 			m_builder->make_empty_ret();
 			return;
 		}
 		expr();
+		m_sema.handle_return(m_builder->last());
 		m_builder->make_ret();
 	}
 
@@ -430,10 +440,13 @@ namespace mpl
 			list([&]
 				{
 					expr();
-					if (m_lexer.peek().what() != Token::Comma)
+					if (m_lexer.peek().what() == Token::Comma)
 					{
-						if (m_lexer.peek().what() != Token::ParenClose)
-							error(m_lexer.peek(), "Expected ',' between call arguments");
+						m_lexer.next();
+					}
+					else if (m_lexer.peek().what() != Token::ParenClose)
+					{
+						error(m_lexer.peek(), "Expected ',' between call arguments");
 					}
 					return true;
 				}, 

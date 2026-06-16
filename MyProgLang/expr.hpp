@@ -6,7 +6,7 @@
 namespace mpl::ast
 {
 	class decl;
-	class Expr : public Node
+	class Expr : public Node, public typed
 	{
 	public:
 		Expr() = delete;
@@ -17,8 +17,8 @@ namespace mpl::ast
 		Expr(Expr&&) = delete;
 		Expr& operator= (Expr&&) = delete;
 
-		explicit Expr(node_kind kind) noexcept :
-			Node(kind)
+		explicit Expr(node_kind kind, types::type t = types::type::Error) noexcept :
+			Node(kind), typed(t)
 		{
 		}
 	};
@@ -35,7 +35,7 @@ namespace mpl::ast
 		lit_expr(lit_expr&&) = delete;
 		lit_expr& operator= (lit_expr&&) = delete;
 
-		explicit lit_expr(const Token& val);
+		lit_expr(const Token& val, types::type t);
 		
 	public:
 		const Token& value() const;
@@ -122,7 +122,7 @@ namespace mpl::ast
 		unary_expr(unary_expr&&) = delete;
 		unary_expr& operator= (unary_expr&&) = delete;
 
-		unary_expr(Node& operand, operation op);
+		unary_expr(Node& operand, operation op, types::type t);
 
 	public:
 		const Node& operand() const;
@@ -143,7 +143,7 @@ namespace mpl::ast
 		binary_expr(binary_expr&&) = delete;
 		binary_expr& operator= (binary_expr&&) = delete;
 
-		binary_expr(Node& lhs, Node& rhs, operation op );
+		binary_expr(Node& lhs, Node& rhs, operation op, types::type t);
 
 	public:
 		const Node& left() const;
@@ -154,5 +154,43 @@ namespace mpl::ast
 		Node* m_lhs;
 		Node* m_rhs;
 		operation m_op;
+	};
+
+	class call_expr : public Expr
+	{
+	public:
+		call_expr() = delete;
+		~call_expr() = default;
+
+		call_expr(const call_expr&) = delete;
+		call_expr& operator= (const  call_expr&) = delete;
+		call_expr(call_expr&&) = delete;
+		call_expr& operator= (call_expr&&) = delete;
+
+		call_expr(Node& callee, const list& args, types::type t);
+	public:
+		const Node& callee() const;
+		const list& args() const;
+	private:
+		Node* m_callee{};
+		const list* m_args{};
+	};
+
+	class implicit_cast : public Expr
+	{
+	public:
+		implicit_cast() = delete;
+		~implicit_cast() = default;
+
+		implicit_cast(const implicit_cast&) = delete;
+		implicit_cast& operator= (const  implicit_cast&) = delete;
+		implicit_cast(implicit_cast&&) = delete;
+		implicit_cast& operator= (implicit_cast&&) = delete;
+
+		implicit_cast(Node& expr, types::type t);
+	public:
+		const Node& expr() const;
+	private:
+		Node* m_expr{};
 	};
 }

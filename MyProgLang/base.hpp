@@ -3,6 +3,7 @@
 #include <vector>
 #include <string_view>
 #include "token.hpp"
+#include "types.hpp"
 
 namespace mpl::ast
 {
@@ -15,6 +16,8 @@ namespace mpl::ast
 		ParenExpr,
 		UnaryExpr,
 		BinaryExpr,
+		CallExpr,
+		ImplicitCast,
 
 		VarDecl,
 		ParamDecl,
@@ -23,6 +26,34 @@ namespace mpl::ast
 		RetStmt,
 		IfStmt,
 		Error
+	};
+
+	class typed
+	{
+	public:
+		typed() = delete;
+		~typed() = default;
+
+		typed(const typed&) = delete;
+		typed& operator=(const typed&) = delete;
+		typed(typed&&) = delete;
+		typed& operator=(typed&&) = delete;
+
+		explicit typed(types::type t = types::type::Error) noexcept
+			: m_type(t)
+		{
+		}
+	public:
+		types::type type() const noexcept
+		{
+			return m_type;
+		}
+		void specify_type(types::type t) noexcept
+		{
+			m_type = t;
+		}
+	private:
+		types::type m_type{};
 	};
 
 	class Node

@@ -1,4 +1,4 @@
-fn f()
+fn test(int a, float b) int
 {
- (2 + 3) = 4;
+  return test(a,b);
 }

@@ -108,6 +108,23 @@ namespace mpl::ast
 			visit(e);
 		}
 
+		void visit_impl(const call_expr* e)
+		{
+			if (preview(e))
+			{
+				visit_root(&e->callee());
+				visit_root(&e->args());
+			}
+			visit(e);
+		}
+
+		void visit_impl(const implicit_cast* e)
+		{
+			if (preview(e))
+				visit_root(&e->expr());
+			visit(e);
+		}
+
 		void visit_impl(const var_decl* v)
 		{
 			if (preview(v))
@@ -179,6 +196,8 @@ namespace mpl::ast
 			case ParenExpr:		visit_impl(to<paren_expr>(n));	break;
 			case UnaryExpr:		visit_impl(to<unary_expr>(n));	break;
 			case BinaryExpr:	visit_impl(to<binary_expr>(n)); break;
+			case CallExpr:		visit_impl(to<call_expr>(n)); break;
+			case ImplicitCast:	visit_impl(to<implicit_cast>(n)); break;
 			case IdExpr:		visit_impl(to<id_expr>(n));	break;
 			case VarDecl:		visit_impl(to<var_decl>(n)); break;
 			case ParamDecl:		visit_impl(to<param_decl>(n)); break;

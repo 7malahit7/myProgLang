@@ -2,8 +2,8 @@
 
 namespace mpl::ast
 {
-	decl::decl(node_kind kind, const Token& name)
-		: Node(kind), m_name(name)
+	decl::decl(node_kind kind, const Token& name, types::type t)
+		: Node(kind), typed(t), m_name(name)
 	{
 	}
 	const Token& decl::name() const
@@ -12,8 +12,8 @@ namespace mpl::ast
 	}
 
 	
-	var_decl::var_decl(const Token& name, Node& init)
-		: decl(Node::VarDecl, name), m_init(&init)
+	var_decl::var_decl(const Token& name, Node& init, types::type t)
+		: decl(Node::VarDecl, name, t), m_init(&init)
 	{
 		validate(&init);
 	}
@@ -23,21 +23,26 @@ namespace mpl::ast
 		return *m_init;
 	}
 
-	param_decl::param_decl(const Token& name)
-		: decl(Node::ParamDecl, name)
+	param_decl::param_decl(const Token& name, types::type t)
+		: decl(Node::ParamDecl, name, t)
 	{
 	}
 
 	func_decl::func_decl(const Token& name)
-		: decl(Node::FunctionDecl, name)
+		: decl(Node::FunctionDecl, name, types::type::Function)
 	{
+	}
+
+	void func_decl::specify_params(const list& params)
+	{
+		m_params = &params;
+		validate(&params);
 	}
 
 	void func_decl::complete(const list& params, const list& body)
 	{
-		m_params = &params;
+		specify_params(params);
 		m_body = &body;
-		validate(&params);
 		validate(&body);
 	}
 
@@ -49,5 +54,15 @@ namespace mpl::ast
 	const list& func_decl::body() const
 	{
 		return *m_body;
+	}
+
+	types::type func_decl::return_type() const noexcept
+	{
+		return m_retType;
+	}
+
+	void func_decl::specify_ret(types::type t) noexcept
+	{
+		m_retType = t;
 	}
 }

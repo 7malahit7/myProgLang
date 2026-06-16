@@ -4,7 +4,7 @@
 
 namespace mpl::ast
 {
-	class decl : public Node
+	class decl : public Node, public typed
 	{
 	public:
 		decl() = default;
@@ -15,7 +15,7 @@ namespace mpl::ast
 		decl(decl&&) = delete;
 		decl& operator= (decl&&) = delete;
 
-		decl(node_kind kind, const Token& name);
+		decl(node_kind kind, const Token& name, types::type t);
 	public:
 		const Token& name() const;
 	private:
@@ -33,7 +33,7 @@ namespace mpl::ast
 		var_decl(var_decl&&) = delete;
 		var_decl& operator= (var_decl&&) = delete;
 
-		var_decl(const Token& name, Node& init);
+		var_decl(const Token& name, Node& init, types::type t);
 	public:
 		const Node& initialiser() const;
 
@@ -52,7 +52,7 @@ namespace mpl::ast
 		param_decl(param_decl&&) = delete;
 		param_decl& operator= (param_decl&&) = delete;
 
-		param_decl(const Token& name);
+		param_decl(const Token& name, types::type t);
 	};
 
 	class func_decl : public decl
@@ -68,11 +68,15 @@ namespace mpl::ast
 
 		func_decl(const Token& name);
 	public:
+		void specify_params(const list& params);
 		void complete(const list& params, const list& body);
 		const list& params() const;
 		const list& body() const;
+		types::type return_type() const noexcept;
+		void specify_ret(types::type t) noexcept;
 	private:
 		const list* m_params{};
 		const list* m_body{};
+		types::type m_retType{ types::type::Error };
 	};
 }

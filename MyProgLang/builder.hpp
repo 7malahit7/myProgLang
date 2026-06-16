@@ -43,8 +43,9 @@ namespace mpl::ast
 		void make_assign(const Token& op);
 
 		decl* make_var(const Token& name);
-		decl* make_param(const Token& name);
+		decl* make_param(const Token& name, types::type t);
 		func_decl* prepare_func(const Token& name);
+		void specify_func_params(func_decl& decl);
 		void complete_func(func_decl& decl);
 		void make_empty_ret();
 		void make_ret();
@@ -58,6 +59,7 @@ namespace mpl::ast
 		void make(Args&& ...args);
 
 		Node* extract();
+		Node* wrap_in_cast(Node& node, types::type to);
 
 	private:
 		node_storage m_nodes;

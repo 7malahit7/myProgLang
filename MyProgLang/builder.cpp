@@ -1,4 +1,5 @@
 #include "builder.hpp"
+#include "sema.hpp"
 
 
 namespace mpl::ast
@@ -44,7 +45,7 @@ namespace mpl::ast
 
 	void Builder::make_literal(const Token& value)
 	{
-		make<lit_expr>(value);
+		make<lit_expr>(value, sema::literal_type(value));
 	}
 
 	void Builder::make_id(decl& d)
@@ -56,7 +57,11 @@ namespace mpl::ast
 	{
 		if (auto operand = extract())
 		{
-			make<unary_expr>(*operand ,op);
+			const auto unaryType = sema::unary_type(*operand, op);
+			if (unaryType.m_opType != unaryType.m_opToType)
+				operand = wrap_in_cast(*operand, unaryType.m_opToType);
+
+			make<unary_expr>(*operand ,op, unaryType.m_exprType);
 		}
 	}
 
@@ -66,7 +71,13 @@ namespace mpl::ast
 		auto lhs = extract();
 		if (lhs && rhs)
 		{
-			make<binary_expr>(*lhs, *rhs, op);
+			const auto binaryType = sema::binary_type(*lhs, *rhs, op);
+			if (binaryType.m_lhsType != binaryType.m_lhsToType)
+				lhs = wrap_in_cast(*lhs, binaryType.m_lhsToType);
+			if (binaryType.m_rhsType != binaryType.m_rhsToType)
+				rhs = wrap_in_cast(*rhs, binaryType.m_rhsToType);
+
+			make<binary_expr>(*lhs, *rhs, op, binaryType.m_exprType);
 		}
 	}
 
@@ -101,7 +112,12 @@ namespace mpl::ast
 				lhs = extract();
 			}
 		}
-		make<binary_expr>(*lhs, *rhs, operation::Assign);
+		const auto initType = sema::extract_type(*rhs);
+		const auto varType = sema::extract_type(*lhs);
+		if (initType != varType)
+			rhs = wrap_in_cast(*rhs, varType);
+
+		make<binary_expr>(*lhs, *rhs, operation::Assign, varType);
 	}
 
 	decl* Builder::make_var(const Token& name)
@@ -109,7 +125,7 @@ namespace mpl::ast
 		auto init = extract();
 		if (init)
 		{
-			make<var_decl>(name, *init);
+			make<var_decl>(name, *init, sema::extract_type(*init));
 		}
 		else
 		{
@@ -118,9 +134,9 @@ namespace mpl::ast
 		return static_cast<decl*>(m_root);
 	}
 
-	decl* Builder::make_param(const Token& name)
+	decl* Builder::make_param(const Token& name, types::type t)
 	{
-		make<param_decl>(name);
+		make<param_decl>(name, t);
 		return static_cast<decl*>(m_root);
 	}
 
@@ -128,6 +144,13 @@ namespace mpl::ast
 	{
 		make<func_decl>(name);
 		return static_cast<func_decl*>(m_root);
+	}
+
+	void Builder::specify_func_params(func_decl& decl)
+	{
+		auto params = last();
+		if (params && params->what() == Node::List)
+			decl.specify_params(static_cast<const list&>(*params));
 	}
 
 	void Builder::complete_func(func_decl& decl)
@@ -180,6 +203,39 @@ namespace mpl::ast
 
 	void Builder::make_call()
 	{
+		auto args = extract();
+		auto callee = extract();
+		if (!callee || !args)
+			return;
+
+		auto func = sema::extract_function(*callee);
+		if (!func)
+		{
+			make<call_expr>(*callee, static_cast<const list&>(*args), types::type::Error);
+			return;
+		}
+
+		list::data_type items;
+		auto&& callArgs = static_cast<const list&>(*args);
+		auto&& params = func->params();
+		items.reserve(callArgs.children().size());
+		const auto argCount = callArgs.children().size();
+		const auto paramCount = params.children().size();
+		for (list::size_type idx{}; idx < argCount; ++idx)
+		{
+			auto item = const_cast<Node*>(callArgs.children()[idx]);
+			if (idx < paramCount)
+			{
+				auto param = static_cast<const param_decl*>(params.children()[idx]);
+				const auto argType = sema::extract_type(*item);
+				if (argType != param->type())
+					item = wrap_in_cast(*item, param->type());
+			}
+			items.push_back(item);
+		}
+
+		auto convertedArgs = m_nodes.emplace_front(std::make_unique<list>(std::move(items))).get();
+		make<call_expr>(*callee, static_cast<const list&>(*convertedArgs), func->return_type());
 	}
 
 	void Builder::make_list(list::size_type count)
@@ -209,6 +265,12 @@ namespace mpl::ast
 		m_state.pop_back();
 		return item;
 	}
+
+	Node* Builder::wrap_in_cast(Node& node, types::type to)
+	{
+		return m_nodes.emplace_front(std::make_unique<implicit_cast>(node, to)).get();
+	}
+
 	void Builder::make_error(const Token& at, error_msg message)
 	{
 		make<error>(at, message);

@@ -3,7 +3,6 @@
 
 #include <fstream>
 #include <iostream>
-#include <print>
 
 class AstPrinter
 	: public mpl::ast::Visitor<AstPrinter>	
@@ -32,7 +31,7 @@ public:
 	{
 		indent();
 		std::cout << "literal '" << expr.value().value() << "'";
-		print_errors(expr);
+		print_type(expr);
 		std::cout << "\n";
 		return true;
 	}
@@ -86,7 +85,7 @@ public:
 		}
 
 		std::cout << "'";
-		print_errors(expr);
+		print_type(expr);
 		std::cout << "\n";
 		m_indetations.push_back(2u);
 		return true;
@@ -105,10 +104,28 @@ public:
 		using namespace std::literals;
 		indent();
 		std::cout << "id '" << expr.name().value() << "' [";
-		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&expr.declaration()));
+		print_address(&expr.declaration());
 		std::cout << "]";
-		print_errors(expr);
+		print_type(expr);
 		std::cout << "\n";
+		return true;
+	}
+	bool preview(const mpl::ast::call_expr& expr)
+	{
+		indent();
+		std::cout << "call";
+		print_type(expr);
+		std::cout << "\n";
+		m_indetations.push_back(2u);
+		return true;
+	}
+	bool preview(const mpl::ast::implicit_cast& expr)
+	{
+		indent();
+		std::cout << "implicit-cast";
+		print_type(expr);
+		std::cout << "\n";
+		m_indetations.push_back(1u);
 		return true;
 	}
 	bool preview(const mpl::ast::var_decl& decl)
@@ -116,9 +133,9 @@ public:
 		using namespace std::literals;
 		indent();
 		std::cout << "variable '" << decl.name().value() << "' [";
-		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
+		print_address(&decl);
 		std::cout << "]";
-		print_errors(decl);
+		print_type(decl);
 		std::cout << "\n";
 		m_indetations.push_back(1u);
 		return true;
@@ -128,9 +145,9 @@ public:
 		using namespace std::literals;
 		indent();
 		std::cout << "param '" << decl.name().value() << "' [";
-		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
+		print_address(&decl);
 		std::cout << "]";
-		print_errors(decl);
+		print_type(decl);
 		std::cout << "\n";
 		return true;
 	}
@@ -139,8 +156,8 @@ public:
 		using namespace std::literals;
 		indent();
 		std::cout << "function '" << decl.name().value() << "' [";
-		std::print(std::cout, "{:X}"sv, reinterpret_cast<std::size_t>(&decl));
-		std::cout << "]";
+		print_address(&decl);
+		std::cout << "] returns " << type_name(decl.return_type());
 		print_errors(decl);
 		std::cout << "\n";
 		m_indetations.push_back(2u);
@@ -179,6 +196,31 @@ private:
 	{
 		if (!node.is_valid())
 			std::cout << " has-errors";
+	}
+	void print_type(const mpl::ast::typed& typed)
+	{
+		std::cout << " " << type_name(typed.type());
+	}
+
+	static void print_address(const void* ptr)
+	{
+		const auto flags = std::cout.flags();
+		std::cout << std::uppercase << std::hex << reinterpret_cast<std::size_t>(ptr);
+		std::cout.flags(flags);
+	}
+
+	static std::string_view type_name(mpl::types::type type)
+	{
+		using enum mpl::types::type;
+		switch (type)
+		{
+		case Void:     return "void";
+		case Bool:     return "bool";
+		case Int:      return "int";
+		case Float:    return "float";
+		case Function: return "func";
+		default:       return "error";
+		}
 	}
 
 	void indent()
