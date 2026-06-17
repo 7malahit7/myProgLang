@@ -25,6 +25,7 @@ namespace mpl::ast
 
 		RetStmt,
 		IfStmt,
+		WhileStmt,
 		Error
 	};
 

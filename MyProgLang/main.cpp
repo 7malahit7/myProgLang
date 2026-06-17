@@ -1,8 +1,10 @@
 #include "parser.hpp"
+#include "evaluator.hpp"
 #include "visitor.hpp"
 
 #include <fstream>
 #include <iostream>
+#include <variant>
 
 class AstPrinter
 	: public mpl::ast::Visitor<AstPrinter>	
@@ -182,6 +184,15 @@ public:
 		m_indetations.push_back(stmt.false_branch() ? 3u : 2u);
 		return true;
 	}
+	bool preview(const mpl::ast::while_stmt& stmt)
+	{
+		indent();
+		std::cout << "while";
+		print_errors(stmt);
+		std::cout << "\n";
+		m_indetations.push_back(2u);
+		return true;
+	}
 	bool preview(const mpl::ast::error& err)
 	{
 		indent();
@@ -331,9 +342,26 @@ void test_parser(std::string_view input)
 	AstPrinter{}(builder.root());
 }
 
+void print_eval_result(const mpl::eval::value& value)
+{
+	std::cout << "Evaluator returned ";
+	std::visit([](auto val)
+		{
+			using val_t = decltype(val);
+			if constexpr (std::same_as<val_t, mpl::eval::invalid_type>)
+				std::cout << "<invalid>";
+			else
+				std::cout << val;
+		}, value.raw());
+	std::cout << "\n";
+}
+
 int main()
 {
 	auto buffer = read_file();
-	test_parser(buffer);
+	mpl::ast::Builder builder;
+	mpl::Parser parser(builder);
+	parser(buffer);
+	print_eval_result(mpl::eval::evaluator{}(*builder.root()));
 	return 0;
 }

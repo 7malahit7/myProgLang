@@ -258,12 +258,19 @@ namespace mpl
 		bool needsSemi{};
 		switch (m_lexer.peek().what())
 		{
+		case Token::KwVar:
+			var_decl();
+			needsSemi = true;
+			break;
 		case Token::KwRet:
 			return_statement();
 			needsSemi = true;
 			break;
 		case Token::KwIf:
 			if_statement();
+			break;
+		case Token::KwWhile:
+			while_statement();
 			break;
 		case Token::CurlyOpen:
 			compound_statement();
@@ -340,6 +347,14 @@ namespace mpl
 			hasElse = true;
 		}
 		m_builder->make_if(hasElse);
+	}
+
+	void Parser::while_statement()
+	{
+		m_lexer.next();
+		condition();
+		statement(false);
+		m_builder->make_while();
 	}
 
 	void Parser::var_decl()

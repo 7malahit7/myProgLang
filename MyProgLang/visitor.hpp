@@ -166,6 +166,16 @@ namespace mpl::ast
 			visit(i);
 		}
 
+		void visit_impl(const while_stmt* w)
+		{
+			if (preview(w))
+			{
+				visit_root(&w->condition());
+				visit_root(&w->body());
+			}
+			visit(w);
+		}
+
 		void visit_impl(const list* l)
 		{
 			if (preview(l))
@@ -204,6 +214,7 @@ namespace mpl::ast
 			case FunctionDecl:	visit_impl(to<func_decl>(n)); break;
 			case RetStmt:		visit_impl(to<ret_stmt>(n)); break;
 			case IfStmt:		visit_impl(to<if_stmt>(n)); break;
+			case WhileStmt:		visit_impl(to<while_stmt>(n)); break;
 			case Error:			visit_impl(to<error>(n)); break;
 			case List:			visit_impl(to<list>(n));	break;
 

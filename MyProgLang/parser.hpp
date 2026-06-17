@@ -45,6 +45,7 @@ namespace mpl
 		void return_statement();
 		void condition();
 		void if_statement();
+		void while_statement();
 		void var_decl();
 		void expr();
 

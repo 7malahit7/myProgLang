@@ -201,6 +201,16 @@ namespace mpl::ast
 		}
 	}
 
+	void Builder::make_while()
+	{
+		auto body = extract();
+		auto condition = extract();
+		if (condition && body)
+		{
+			make<while_stmt>(*condition, *body);
+		}
+	}
+
 	void Builder::make_call()
 	{
 		auto args = extract();

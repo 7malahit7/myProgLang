@@ -44,6 +44,26 @@ namespace mpl::ast
 		Node* m_falseBranch{};
 	};
 
+	class while_stmt : public Node
+	{
+	public:
+		while_stmt() = delete;
+		~while_stmt() = default;
+
+		while_stmt(const while_stmt&) = delete;
+		while_stmt& operator=(const while_stmt&) = delete;
+		while_stmt(while_stmt&&) = delete;
+		while_stmt& operator=(while_stmt&&) = delete;
+
+		while_stmt(Node& cond, Node& body);
+	public:
+		const Node& condition() const;
+		const Node& body() const;
+	private:
+		Node* m_condition{};
+		Node* m_body{};
+	};
+
 	inline ret_stmt::ret_stmt(Node* retExpr)
 		: Node(Node::RetStmt), m_retExpr(retExpr)
 	{
@@ -79,5 +99,24 @@ namespace mpl::ast
 	inline const Node* if_stmt::false_branch() const
 	{
 		return m_falseBranch;
+	}
+
+	inline while_stmt::while_stmt(Node& cond, Node& body)
+		: Node(Node::WhileStmt),
+		  m_condition(&cond),
+		  m_body(&body)
+	{
+		validate(&cond);
+		validate(&body);
+	}
+
+	inline const Node& while_stmt::condition() const
+	{
+		return *m_condition;
+	}
+
+	inline const Node& while_stmt::body() const
+	{
+		return *m_body;
 	}
 }

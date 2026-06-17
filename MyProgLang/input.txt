@@ -1,4 +1,18 @@
-fn test(int a, float b) int
+fn fact_loop(int arg)
 {
-  return test(a,b);
+	var res = 1;
+	while(arg > 0)
+	{
+		res = res * arg;
+		arg = arg - 1;
+	}
+	return res;
+}
+
+var global = 10;
+
+fn _main()
+{
+
+	return fact_loop(global);
 }

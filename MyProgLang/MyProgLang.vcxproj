@@ -131,17 +131,21 @@
     <ClCompile Include="base.hpp" />
     <ClCompile Include="builder.cpp" />
     <ClCompile Include="decl.cpp" />
+    <ClCompile Include="evaluator.cpp" />
     <ClCompile Include="expr.cpp" />
     <ClCompile Include="lex.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="sema.cpp" />
     <ClCompile Include="symtab.cpp" />
+    <ClCompile Include="value.cpp" />
+    <ClCompile Include="value_map.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ast.hpp" />
     <ClInclude Include="builder.hpp" />
     <ClInclude Include="decl.hpp" />
+    <ClInclude Include="evaluator.hpp" />
     <ClInclude Include="expr.hpp" />
     <ClInclude Include="lex.hpp" />
     <ClInclude Include="parser.hpp" />
@@ -149,6 +153,8 @@
     <ClInclude Include="stmt.hpp" />
     <ClInclude Include="symtab.hpp" />
     <ClInclude Include="token.hpp" />
+    <ClInclude Include="value.hpp" />
+    <ClInclude Include="value_map.hpp" />
     <ClInclude Include="visitor.hpp" />
   </ItemGroup>
   <ItemGroup>

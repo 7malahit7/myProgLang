@@ -50,6 +50,7 @@ namespace mpl::ast
 		void make_empty_ret();
 		void make_ret();
 		void make_if(bool hasElse);
+		void make_while();
 		void make_call();
 		void make_list(list::size_type count);
 		void make_error(const Token& at, error_msg message);
